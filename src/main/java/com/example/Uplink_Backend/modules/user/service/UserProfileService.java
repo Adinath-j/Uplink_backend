@@ -6,6 +6,9 @@ import com.example.Uplink_Backend.modules.auth.repository.UserRepository;
 import com.example.Uplink_Backend.modules.user.dto.*;
 import com.example.Uplink_Backend.modules.user.entity.*;
 import com.example.Uplink_Backend.modules.user.repository.*;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,6 +48,7 @@ public class UserProfileService {
         this.achievementRepository = achievementRepository;
     }
 
+    @Cacheable(value = "profiles", key = "#userId")
     public Profile getOrCreateProfile(UUID userId) {
         return profileRepository.findByUserId(userId).orElseGet(() -> {
             User user = userRepository.findById(userId)
@@ -55,6 +59,10 @@ public class UserProfileService {
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "profiles", key = "#userId"),
+            @CacheEvict(value = "portfolios", key = "#userId")
+    })
     public Profile updateProfile(UUID userId, ProfileUpdateRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -76,6 +84,7 @@ public class UserProfileService {
         return profileRepository.save(profile);
     }
 
+    @Cacheable(value = "portfolios", key = "#userId")
     public DigitalPortfolioDto getDigitalPortfolio(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -93,6 +102,7 @@ public class UserProfileService {
 
     // Education
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Education addEducation(UUID userId, Education education) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -105,6 +115,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public void deleteEducation(UUID userId, UUID educationId) {
         Education edu = educationRepository.findById(educationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Education", "id", educationId));
@@ -115,6 +126,10 @@ public class UserProfileService {
 
     // Skills
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "skills", key = "#userId"),
+            @CacheEvict(value = "portfolios", key = "#userId")
+    })
     public UserSkill addSkill(UUID userId, AddSkillRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -135,11 +150,16 @@ public class UserProfileService {
         return userSkillRepository.save(userSkill);
     }
 
+    @Cacheable(value = "skills", key = "#userId")
     public List<UserSkill> getUserSkills(UUID userId) {
         return userSkillRepository.findByUserId(userId);
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "skills", key = "#userId"),
+            @CacheEvict(value = "portfolios", key = "#userId")
+    })
     public void deleteSkill(UUID userId, UUID userSkillId) {
         UserSkill us = userSkillRepository.findById(userSkillId)
                 .orElseThrow(() -> new ResourceNotFoundException("UserSkill", "id", userSkillId));
@@ -150,6 +170,7 @@ public class UserProfileService {
 
     // Projects
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Project addProject(UUID userId, Project project) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -162,6 +183,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public void deleteProject(UUID userId, UUID projectId) {
         Project proj = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
@@ -172,6 +194,7 @@ public class UserProfileService {
 
     // Experiences
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Experience addExperience(UUID userId, Experience experience) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -184,6 +207,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public void deleteExperience(UUID userId, UUID experienceId) {
         Experience exp = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Experience", "id", experienceId));
@@ -194,6 +218,7 @@ public class UserProfileService {
 
     // Certifications
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Certification addCertification(UUID userId, Certification cert) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -206,6 +231,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public void deleteCertification(UUID userId, UUID certId) {
         Certification cert = certificationRepository.findById(certId)
                 .orElseThrow(() -> new ResourceNotFoundException("Certification", "id", certId));
@@ -216,6 +242,7 @@ public class UserProfileService {
 
     // Achievements
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Achievement addAchievement(UUID userId, Achievement achievement) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
@@ -228,6 +255,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public void deleteAchievement(UUID userId, UUID achievementId) {
         Achievement ach = achievementRepository.findById(achievementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Achievement", "id", achievementId));
@@ -237,6 +265,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Education updateEducation(UUID userId, UUID educationId, Education update) {
         Education edu = educationRepository.findById(educationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Education", "id", educationId));
@@ -254,6 +283,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Project updateProject(UUID userId, UUID projectId, Project update) {
         Project proj = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
@@ -269,6 +299,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Experience updateExperience(UUID userId, UUID experienceId, Experience update) {
         Experience exp = experienceRepository.findById(experienceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Experience", "id", experienceId));
@@ -285,6 +316,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Certification updateCertification(UUID userId, UUID certId, Certification update) {
         Certification cert = certificationRepository.findById(certId)
                 .orElseThrow(() -> new ResourceNotFoundException("Certification", "id", certId));
@@ -299,6 +331,7 @@ public class UserProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = "portfolios", key = "#userId")
     public Achievement updateAchievement(UUID userId, UUID achievementId, Achievement update) {
         Achievement ach = achievementRepository.findById(achievementId)
                 .orElseThrow(() -> new ResourceNotFoundException("Achievement", "id", achievementId));

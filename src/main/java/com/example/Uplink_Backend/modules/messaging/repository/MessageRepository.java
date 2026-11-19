@@ -32,6 +32,20 @@ public interface MessageRepository extends JpaRepository<Message, UUID> {
     @Query("SELECT COUNT(m) FROM Message m WHERE m.conversation.id = :conversationId AND m.sender.id <> :userId AND (m.isRead = false OR m.isRead IS NULL)")
     long countUnreadMessages(@Param("conversationId") UUID conversationId, @Param("userId") UUID userId);
 
+    @Query("SELECT m.conversation.id, COUNT(m) FROM Message m " +
+           "WHERE m.conversation.id IN :convIds " +
+           "AND m.sender.id <> :userId " +
+           "AND (m.isRead = false OR m.isRead IS NULL) " +
+           "GROUP BY m.conversation.id")
+    List<Object[]> countUnreadByConversationIds(@Param("convIds") List<UUID> convIds, @Param("userId") UUID userId);
+
+    @Query("SELECT m FROM Message m " +
+           "WHERE m.conversation.id IN :convIds " +
+           "AND m.createdAt IN (" +
+           "  SELECT MAX(m2.createdAt) FROM Message m2 WHERE m2.conversation.id IN :convIds GROUP BY m2.conversation.id" +
+           ")")
+    List<Message> findLatestMessagesByConversationIds(@Param("convIds") List<UUID> convIds);
+
     @Modifying
     @Query("UPDATE Message m SET m.isRead = true, m.readAt = :readAt WHERE m.conversation.id = :conversationId AND m.sender.id <> :userId AND (m.isRead = false OR m.isRead IS NULL)")
     void markAllAsRead(@Param("conversationId") UUID conversationId, @Param("userId") UUID userId, @Param("readAt") Instant readAt);

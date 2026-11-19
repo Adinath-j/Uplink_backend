@@ -109,9 +109,52 @@ public class MessagingService {
     }
 
     public List<ConversationDto> getUserConversationDtos(UUID userId) {
-        List<Conversation> conversations = conversationRepository.findConversationsByUserId(userId);
+        List<Conversation> conversations = conversationRepository.findConversationsByUserIdWithMembers(userId);
+        if (conversations.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<UUID> convIds = conversations.stream().map(Conversation::getId).toList();
+
+        // 1. Batch unread counts for all conversations in 1 query
+        Map<UUID, Long> unreadMap = new HashMap<>();
+        try {
+            List<Object[]> unreadRows = messageRepository.countUnreadByConversationIds(convIds, userId);
+            for (Object[] row : unreadRows) {
+                if (row != null && row.length >= 2 && row[0] instanceof UUID cId && row[1] instanceof Number count) {
+                    unreadMap.put(cId, count.longValue());
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to per-conversation count if batch fails
+            for (Conversation c : conversations) {
+                unreadMap.put(c.getId(), messageRepository.countUnreadMessages(c.getId(), userId));
+            }
+        }
+
+        // 2. Batch latest messages for all conversations in 1 query
+        Map<UUID, Message> latestMessageMap = new HashMap<>();
+        try {
+            List<Message> latestMessages = messageRepository.findLatestMessagesByConversationIds(convIds);
+            for (Message msg : latestMessages) {
+                if (msg != null && msg.getConversation() != null) {
+                    UUID cId = msg.getConversation().getId();
+                    Message existing = latestMessageMap.get(cId);
+                    if (existing == null || (msg.getCreatedAt() != null && existing.getCreatedAt() != null && msg.getCreatedAt().isAfter(existing.getCreatedAt()))) {
+                        latestMessageMap.put(cId, msg);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Fallback to per-conversation lookup if batch query fails
+            for (Conversation c : conversations) {
+                messageRepository.findFirstByConversationIdOrderByCreatedAtDesc(c.getId())
+                        .ifPresent(m -> latestMessageMap.put(c.getId(), m));
+            }
+        }
+
         return conversations.stream()
-                .map(c -> toConversationDto(c, userId))
+                .map(c -> toConversationDto(c, userId, latestMessageMap.get(c.getId()), unreadMap.getOrDefault(c.getId(), 0L)))
                 .collect(Collectors.toList());
     }
 
@@ -125,6 +168,12 @@ public class MessagingService {
     }
 
     public ConversationDto toConversationDto(Conversation conversation, UUID currentUserId) {
+        Optional<Message> lastMessageOpt = messageRepository.findFirstByConversationIdOrderByCreatedAtDesc(conversation.getId());
+        long unread = currentUserId != null ? messageRepository.countUnreadMessages(conversation.getId(), currentUserId) : 0L;
+        return toConversationDto(conversation, currentUserId, lastMessageOpt.orElse(null), unread);
+    }
+
+    public ConversationDto toConversationDto(Conversation conversation, UUID currentUserId, Message lastMessage, Long unreadCount) {
         ConversationDto dto = new ConversationDto();
         dto.setId(conversation.getId());
         dto.setType(conversation.getType());
@@ -148,15 +197,11 @@ public class MessagingService {
         }
         dto.setMembers(memberSummaries);
 
-        // Fetch latest message
-        Optional<Message> lastMessageOpt = messageRepository.findFirstByConversationIdOrderByCreatedAtDesc(conversation.getId());
-        lastMessageOpt.ifPresent(dto::setLastMessage);
-
-        // Fetch unread count for current user
-        if (currentUserId != null) {
-            long unread = messageRepository.countUnreadMessages(conversation.getId(), currentUserId);
-            dto.setUnreadCount(unread);
+        if (lastMessage != null) {
+            dto.setLastMessage(lastMessage);
         }
+
+        dto.setUnreadCount(unreadCount != null ? unreadCount : 0L);
 
         return dto;
     }
