@@ -69,6 +69,7 @@ public class DataSeeder implements CommandLineRunner {
     private final AnswerRepository answerRepository;
     private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     public DataSeeder(RoleRepository roleRepository,
                       UserRepository userRepository,
@@ -90,7 +91,8 @@ public class DataSeeder implements CommandLineRunner {
                       QuestionRepository questionRepository,
                       AnswerRepository answerRepository,
                       MentorProfileRepository mentorProfileRepository,
-                      PasswordEncoder passwordEncoder) {
+                      PasswordEncoder passwordEncoder,
+                      org.springframework.jdbc.core.JdbcTemplate jdbcTemplate) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
         this.adminRepository = adminRepository;
@@ -112,11 +114,18 @@ public class DataSeeder implements CommandLineRunner {
         this.answerRepository = answerRepository;
         this.mentorProfileRepository = mentorProfileRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
+        try {
+            jdbcTemplate.execute("ALTER TABLE messages ADD COLUMN IF NOT EXISTS client_message_id VARCHAR(100);");
+            logger.info("DataSeeder: Schema migration for client_message_id applied successfully.");
+        } catch (Exception e) {
+            logger.warn("DataSeeder: Schema migration note: {}", e.getMessage());
+        }
+
         if (roleRepository.count() > 0) {
             logger.info("DataSeeder: Database already populated. Skipping seeder.");
             return;
