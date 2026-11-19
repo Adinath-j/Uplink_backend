@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.railpack.com",
+  "steps": {
+    "build": {
+      "commands": [
+        "chmod +x mvnw",
+        "./mvnw clean package -DskipTests"
+      ]
+    }
+  },
+  "deploy": {
+    "startCommand": "java -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom -jar target/Uplink-Backend-0.0.1-SNAPSHOT.jar"
+  }
+}
