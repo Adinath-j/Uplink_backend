@@ -1,6 +1,7 @@
 package com.example.Uplink_Backend.modules.mentor.entity;
 
 import com.example.Uplink_Backend.modules.auth.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -17,6 +18,7 @@ public class MentorBooking {
     @JoinColumn(name = "mentor_id", nullable = false)
     private MentorProfile mentor;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
     private User student;
@@ -77,6 +79,7 @@ public class MentorBooking {
         this.mentor = mentor;
     }
 
+    @JsonIgnore
     public User getStudent() {
         return student;
     }

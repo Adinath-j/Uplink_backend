@@ -45,7 +45,8 @@ public class ContentController {
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestParam(required = false) String type,
             Pageable pageable) {
-        Page<PostResponseDto> feed = contentService.getFeed(userPrincipal.getId(), type, pageable);
+        UUID currentUserId = userPrincipal != null ? userPrincipal.getId() : null;
+        Page<PostResponseDto> feed = contentService.getFeed(currentUserId, type, pageable);
         return ResponseEntity.ok(ApiResponse.ok("Community feed retrieved", feed));
     }
 
@@ -54,7 +55,8 @@ public class ContentController {
     public ResponseEntity<ApiResponse<PostResponseDto>> getPost(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable UUID id) {
-        PostResponseDto post = contentService.getPostById(id, userPrincipal.getId());
+        UUID currentUserId = userPrincipal != null ? userPrincipal.getId() : null;
+        PostResponseDto post = contentService.getPostById(id, currentUserId);
         return ResponseEntity.ok(ApiResponse.ok("Post retrieved", post));
     }
 
