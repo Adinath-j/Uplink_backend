@@ -380,3 +380,101 @@ CREATE INDEX IF NOT EXISTS idx_applications_opportunity ON applications(opportun
 CREATE INDEX IF NOT EXISTS idx_messages_conversation ON messages(conversation_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_recommendations_user ON recommendations(user_id);
+
+-- -------------------------------------------------------------------
+-- 7. SAVED OPPORTUNITIES / BOOKMARKS
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS saved_opportunities (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    opportunity_id UUID NOT NULL REFERENCES opportunities(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_user_saved_opportunity UNIQUE (user_id, opportunity_id)
+);
+CREATE INDEX IF NOT EXISTS idx_saved_opp_user ON saved_opportunities(user_id);
+CREATE INDEX IF NOT EXISTS idx_saved_opp_opportunity ON saved_opportunities(opportunity_id);
+
+-- -------------------------------------------------------------------
+-- 8. Q&A FORUM
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS questions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    topic_tags TEXT,
+    answer_count INT DEFAULT 0,
+    same_doubt_count INT DEFAULT 0,
+    is_unanswered BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_questions_author ON questions(author_id);
+CREATE INDEX IF NOT EXISTS idx_questions_created ON questions(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS answers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    helpful_count INT DEFAULT 0,
+    is_accepted BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_answers_question ON answers(question_id);
+CREATE INDEX IF NOT EXISTS idx_answers_author ON answers(author_id);
+
+CREATE TABLE IF NOT EXISTS question_doubts (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    question_id UUID NOT NULL REFERENCES questions(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_question_user_doubt UNIQUE (question_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS answer_helpfuls (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    answer_id UUID NOT NULL REFERENCES answers(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uq_answer_user_helpful UNIQUE (answer_id, user_id)
+);
+
+-- -------------------------------------------------------------------
+-- 9. MENTORSHIP
+-- -------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS mentor_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    name VARCHAR(255) NOT NULL,
+    designation VARCHAR(150) NOT NULL,
+    organization VARCHAR(255) NOT NULL,
+    avatar_url TEXT,
+    bio TEXT,
+    domains TEXT,
+    skills TEXT,
+    years_of_experience INT DEFAULT 0,
+    is_available BOOLEAN DEFAULT TRUE,
+    available_days VARCHAR(100) DEFAULT 'Mon, Wed, Fri',
+    rating NUMERIC(3,2) DEFAULT 5.0,
+    sessions_completed INT DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_mentors_rating ON mentor_profiles(rating DESC);
+
+CREATE TABLE IF NOT EXISTS mentor_bookings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    mentor_id UUID NOT NULL REFERENCES mentor_profiles(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mentor_name VARCHAR(255) NOT NULL,
+    mentor_role VARCHAR(150),
+    preferred_time VARCHAR(100) NOT NULL,
+    topic VARCHAR(255) NOT NULL,
+    message TEXT,
+    status VARCHAR(50) DEFAULT 'REQUESTED',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_bookings_student ON mentor_bookings(student_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_mentor ON mentor_bookings(mentor_id);

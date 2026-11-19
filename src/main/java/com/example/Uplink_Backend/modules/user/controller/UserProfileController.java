@@ -78,6 +78,15 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.ok("Education record deleted", null));
     }
 
+    @PutMapping("/education/{id}")
+    @Operation(summary = "Update education record")
+    public ResponseEntity<ApiResponse<Education>> updateEducation(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                  @PathVariable UUID id,
+                                                                  @RequestBody Education education) {
+        Education updated = profileService.updateEducation(userPrincipal.getId(), id, education);
+        return ResponseEntity.ok(ApiResponse.ok("Education record updated", updated));
+    }
+
     // Skills
     @PostMapping("/skills")
     @Operation(summary = "Add or update a skill with proficiency level")
@@ -124,6 +133,15 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.ok("Project deleted", null));
     }
 
+    @PutMapping("/projects/{id}")
+    @Operation(summary = "Update portfolio project")
+    public ResponseEntity<ApiResponse<Project>> updateProject(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                              @PathVariable UUID id,
+                                                              @RequestBody Project project) {
+        Project updated = profileService.updateProject(userPrincipal.getId(), id, project);
+        return ResponseEntity.ok(ApiResponse.ok("Project updated", updated));
+    }
+
     // Experiences
     @PostMapping("/experiences")
     @Operation(summary = "Add experience record")
@@ -145,6 +163,15 @@ public class UserProfileController {
                                                               @PathVariable UUID id) {
         profileService.deleteExperience(userPrincipal.getId(), id);
         return ResponseEntity.ok(ApiResponse.ok("Experience deleted", null));
+    }
+
+    @PutMapping("/experiences/{id}")
+    @Operation(summary = "Update experience record")
+    public ResponseEntity<ApiResponse<Experience>> updateExperience(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                    @PathVariable UUID id,
+                                                                    @RequestBody Experience experience) {
+        Experience updated = profileService.updateExperience(userPrincipal.getId(), id, experience);
+        return ResponseEntity.ok(ApiResponse.ok("Experience updated", updated));
     }
 
     // Certifications
@@ -170,6 +197,15 @@ public class UserProfileController {
         return ResponseEntity.ok(ApiResponse.ok("Certification deleted", null));
     }
 
+    @PutMapping("/certifications/{id}")
+    @Operation(summary = "Update certification")
+    public ResponseEntity<ApiResponse<Certification>> updateCertification(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                          @PathVariable UUID id,
+                                                                          @RequestBody Certification certification) {
+        Certification updated = profileService.updateCertification(userPrincipal.getId(), id, certification);
+        return ResponseEntity.ok(ApiResponse.ok("Certification updated", updated));
+    }
+
     // Achievements
     @PostMapping("/achievements")
     @Operation(summary = "Add achievement")
@@ -191,5 +227,14 @@ public class UserProfileController {
                                                                @PathVariable UUID id) {
         profileService.deleteAchievement(userPrincipal.getId(), id);
         return ResponseEntity.ok(ApiResponse.ok("Achievement deleted", null));
+    }
+
+    @PutMapping("/achievements/{id}")
+    @Operation(summary = "Update achievement")
+    public ResponseEntity<ApiResponse<Achievement>> updateAchievement(@AuthenticationPrincipal UserPrincipal userPrincipal,
+                                                                      @PathVariable UUID id,
+                                                                      @RequestBody Achievement achievement) {
+        Achievement updated = profileService.updateAchievement(userPrincipal.getId(), id, achievement);
+        return ResponseEntity.ok(ApiResponse.ok("Achievement updated", updated));
     }
 }

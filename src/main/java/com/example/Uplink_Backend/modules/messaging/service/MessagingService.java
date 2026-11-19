@@ -14,6 +14,7 @@ import com.example.Uplink_Backend.modules.messaging.repository.ConversationRepos
 import com.example.Uplink_Backend.modules.messaging.repository.MessageRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,15 +31,18 @@ public class MessagingService {
     private final ConversationMemberRepository memberRepository;
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public MessagingService(ConversationRepository conversationRepository,
                             ConversationMemberRepository memberRepository,
                             MessageRepository messageRepository,
-                            UserRepository userRepository) {
+                            UserRepository userRepository,
+                            SimpMessagingTemplate messagingTemplate) {
         this.conversationRepository = conversationRepository;
         this.memberRepository = memberRepository;
         this.messageRepository = messageRepository;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -94,6 +98,22 @@ public class MessagingService {
 
         conversation.setUpdatedAt(Instant.now());
         conversationRepository.save(conversation);
+
+        // Real-time WebSocket delivery
+        try {
+            // Broadcast to the conversation room
+            messagingTemplate.convertAndSend("/topic/conversations." + conversation.getId(), savedMessage);
+
+            // Broadcast to recipients' personal channels for in-app alert toasts
+            List<ConversationMember> members = memberRepository.findByConversationId(conversation.getId());
+            for (ConversationMember member : members) {
+                if (member.getUser() != null && !member.getUser().getId().equals(senderId)) {
+                    messagingTemplate.convertAndSend("/topic/user." + member.getUser().getId() + ".messages", savedMessage);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to broadcast message via WebSocket: " + e.getMessage());
+        }
 
         return savedMessage;
     }

@@ -17,9 +17,15 @@ import com.example.Uplink_Backend.modules.content.repository.CommentRepository;
 import com.example.Uplink_Backend.modules.content.repository.PostRepository;
 import com.example.Uplink_Backend.modules.notification.entity.Notification;
 import com.example.Uplink_Backend.modules.notification.repository.NotificationRepository;
+import com.example.Uplink_Backend.modules.mentor.entity.MentorProfile;
+import com.example.Uplink_Backend.modules.mentor.repository.MentorProfileRepository;
 import com.example.Uplink_Backend.modules.opportunity.entity.Opportunity;
 import com.example.Uplink_Backend.modules.opportunity.entity.OpportunitySkill;
 import com.example.Uplink_Backend.modules.opportunity.repository.OpportunityRepository;
+import com.example.Uplink_Backend.modules.qa.entity.Answer;
+import com.example.Uplink_Backend.modules.qa.entity.Question;
+import com.example.Uplink_Backend.modules.qa.repository.AnswerRepository;
+import com.example.Uplink_Backend.modules.qa.repository.QuestionRepository;
 import com.example.Uplink_Backend.modules.recruiter.entity.Company;
 import com.example.Uplink_Backend.modules.recruiter.entity.Recruiter;
 import com.example.Uplink_Backend.modules.recruiter.repository.CompanyRepository;
@@ -59,6 +65,9 @@ public class DataSeeder implements CommandLineRunner {
     private final CommentRepository commentRepository;
     private final NotificationRepository notificationRepository;
     private final AuditLogRepository auditLogRepository;
+    private final QuestionRepository questionRepository;
+    private final AnswerRepository answerRepository;
+    private final MentorProfileRepository mentorProfileRepository;
     private final PasswordEncoder passwordEncoder;
 
     public DataSeeder(RoleRepository roleRepository,
@@ -78,6 +87,9 @@ public class DataSeeder implements CommandLineRunner {
                       CommentRepository commentRepository,
                       NotificationRepository notificationRepository,
                       AuditLogRepository auditLogRepository,
+                      QuestionRepository questionRepository,
+                      AnswerRepository answerRepository,
+                      MentorProfileRepository mentorProfileRepository,
                       PasswordEncoder passwordEncoder) {
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
@@ -96,6 +108,9 @@ public class DataSeeder implements CommandLineRunner {
         this.commentRepository = commentRepository;
         this.notificationRepository = notificationRepository;
         this.auditLogRepository = auditLogRepository;
+        this.questionRepository = questionRepository;
+        this.answerRepository = answerRepository;
+        this.mentorProfileRepository = mentorProfileRepository;
         this.passwordEncoder = passwordEncoder;
     }
 
@@ -325,6 +340,60 @@ public class DataSeeder implements CommandLineRunner {
         notificationRepository.save(new Notification(savedStudent, "Welcome to Uplink!",
                 "Your profile has been initialized. Explore matched opportunities, take skill assessments, and connect with recruiters.",
                 "INFO"));
+
+        // 11. Q&A Forum Community Questions
+        if (questionRepository.count() == 0) {
+            Question ques1 = new Question(savedStudent,
+                    "How to prepare for System Design in campus placements?",
+                    "Looking for guidance on high-level architecture, caching, and rate limiting for SDE-1 interviews.",
+                    "System Design, Placements");
+            ques1.setAnswerCount(1);
+            ques1.setSameDoubtCount(5);
+            ques1.setUnanswered(false);
+            Question savedQ = questionRepository.save(ques1);
+
+            Answer a1 = new Answer(savedQ, savedRecruiter,
+                    "Start with Alex Xu's System Design Interview Volume 1. Focus on load balancers, CDN caching, and database indexing.");
+            a1.setHelpfulCount(8);
+            a1.setAccepted(true);
+            answerRepository.save(a1);
+
+            Question ques2 = new Question(savedStudent,
+                    "Difference between optimistic vs pessimistic locking in JPA?",
+                    "When should @Version be preferred over SELECT ... FOR UPDATE in transactional systems?",
+                    "DSA, Academics");
+            ques2.setSameDoubtCount(3);
+            ques2.setAnswerCount(0);
+            ques2.setUnanswered(true);
+            questionRepository.save(ques2);
+        }
+
+        // 12. Mentors Directory
+        if (mentorProfileRepository.count() == 0) {
+            MentorProfile m1 = new MentorProfile("Dr. Arvind Sharma", "Principal Architect", "Google Cloud",
+                    "https://images.unsplash.com/photo-1534528741775-53994a69daeb",
+                    "Specializing in large-scale distributed systems, microservices, and cloud migration architecture.",
+                    "Engineering, System Design", "Distributed Systems, Kubernetes, Go, Java", 14, "Mon, Wed, Fri");
+            m1.setRating(4.95);
+            m1.setSessionsCompleted(42);
+            mentorProfileRepository.save(m1);
+
+            MentorProfile m2 = new MentorProfile("Priya Nambiar", "Senior Staff Product Manager", "Microsoft",
+                    "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2",
+                    "Guiding students on product sense, technical product roadmapping, and APM interviews.",
+                    "Product, Strategy", "Product Management, Agile, System Thinking", 10, "Tue, Thu");
+            m2.setRating(4.88);
+            m2.setSessionsCompleted(38);
+            mentorProfileRepository.save(m2);
+
+            MentorProfile m3 = new MentorProfile("Rohan Kulkarni", "Lead Data Scientist", "Amazon Web Services",
+                    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d",
+                    "Helping students master ML system architecture, algorithmic modeling, and GenAI applications.",
+                    "Data Science, AI/ML", "PyTorch, ML Pipelines, NLP, Python", 8, "Sat, Sun");
+            m3.setRating(4.92);
+            m3.setSessionsCompleted(29);
+            mentorProfileRepository.save(m3);
+        }
 
         auditLogRepository.save(new AuditLog(savedAdmin, "SYSTEM_SEED_INITIALIZED", "System", null,
                 "{\"status\": \"All 15 modules seeded successfully\"}"));

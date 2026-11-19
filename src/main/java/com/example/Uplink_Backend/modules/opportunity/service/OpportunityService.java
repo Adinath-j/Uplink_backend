@@ -8,8 +8,10 @@ import com.example.Uplink_Backend.modules.opportunity.dto.ExternalIngestionReque
 import com.example.Uplink_Backend.modules.opportunity.entity.Opportunity;
 import com.example.Uplink_Backend.modules.opportunity.entity.OpportunitySkill;
 import com.example.Uplink_Backend.modules.opportunity.entity.OpportunitySource;
+import com.example.Uplink_Backend.modules.opportunity.entity.SavedOpportunity;
 import com.example.Uplink_Backend.modules.opportunity.repository.OpportunityRepository;
 import com.example.Uplink_Backend.modules.opportunity.repository.OpportunitySourceRepository;
+import com.example.Uplink_Backend.modules.opportunity.repository.SavedOpportunityRepository;
 import com.example.Uplink_Backend.modules.recruiter.entity.Company;
 import com.example.Uplink_Backend.modules.recruiter.entity.Recruiter;
 import com.example.Uplink_Backend.modules.recruiter.repository.CompanyRepository;
@@ -22,13 +24,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 public class OpportunityService {
 
     private final OpportunityRepository opportunityRepository;
     private final OpportunitySourceRepository sourceRepository;
+    private final SavedOpportunityRepository savedOpportunityRepository;
     private final CompanyRepository companyRepository;
     private final RecruiterRepository recruiterRepository;
     private final UserRepository userRepository;
@@ -36,12 +41,14 @@ public class OpportunityService {
 
     public OpportunityService(OpportunityRepository opportunityRepository,
                               OpportunitySourceRepository sourceRepository,
+                              SavedOpportunityRepository savedOpportunityRepository,
                               CompanyRepository companyRepository,
                               RecruiterRepository recruiterRepository,
                               UserRepository userRepository,
                               SkillRepository skillRepository) {
         this.opportunityRepository = opportunityRepository;
         this.sourceRepository = sourceRepository;
+        this.savedOpportunityRepository = savedOpportunityRepository;
         this.companyRepository = companyRepository;
         this.recruiterRepository = recruiterRepository;
         this.userRepository = userRepository;
@@ -153,5 +160,31 @@ public class OpportunityService {
         Opportunity opp = getOpportunityById(id);
         opp.setIsVerified(isVerified);
         return opportunityRepository.save(opp);
+    }
+
+    @Transactional
+    public SavedOpportunity saveOpportunity(UUID userId, UUID opportunityId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+        Opportunity opp = getOpportunityById(opportunityId);
+
+        return savedOpportunityRepository.findByUserIdAndOpportunityId(userId, opportunityId)
+                .orElseGet(() -> savedOpportunityRepository.save(new SavedOpportunity(user, opp)));
+    }
+
+    @Transactional
+    public void unsaveOpportunity(UUID userId, UUID opportunityId) {
+        savedOpportunityRepository.deleteByUserIdAndOpportunityId(userId, opportunityId);
+    }
+
+    public List<Opportunity> getSavedOpportunities(UUID userId) {
+        return savedOpportunityRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                .stream()
+                .map(SavedOpportunity::getOpportunity)
+                .collect(Collectors.toList());
+    }
+
+    public boolean isOpportunitySaved(UUID userId, UUID opportunityId) {
+        return savedOpportunityRepository.existsByUserIdAndOpportunityId(userId, opportunityId);
     }
 }

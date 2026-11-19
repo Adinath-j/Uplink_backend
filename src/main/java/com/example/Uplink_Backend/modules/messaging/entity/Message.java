@@ -61,6 +61,11 @@ public class Message {
         return conversation;
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("conversationId")
+    public UUID getConversationId() {
+        return conversation != null ? conversation.getId() : null;
+    }
+
     public void setConversation(Conversation conversation) {
         this.conversation = conversation;
     }

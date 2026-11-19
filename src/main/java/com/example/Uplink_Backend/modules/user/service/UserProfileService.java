@@ -235,4 +235,79 @@ public class UserProfileService {
             achievementRepository.delete(ach);
         }
     }
+
+    @Transactional
+    public Education updateEducation(UUID userId, UUID educationId, Education update) {
+        Education edu = educationRepository.findById(educationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Education", "id", educationId));
+        if (!edu.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Cannot update another user's education record");
+        }
+        if (update.getDegree() != null) edu.setDegree(update.getDegree());
+        if (update.getCollege() != null) edu.setCollege(update.getCollege());
+        if (update.getBranch() != null) edu.setBranch(update.getBranch());
+        if (update.getStartYear() != null) edu.setStartYear(update.getStartYear());
+        if (update.getEndYear() != null) edu.setEndYear(update.getEndYear());
+        if (update.getCgpa() != null) edu.setCgpa(update.getCgpa());
+        if (update.getIsCurrent() != null) edu.setIsCurrent(update.getIsCurrent());
+        return educationRepository.save(edu);
+    }
+
+    @Transactional
+    public Project updateProject(UUID userId, UUID projectId, Project update) {
+        Project proj = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+        if (!proj.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Cannot update another user's project");
+        }
+        if (update.getTitle() != null) proj.setTitle(update.getTitle());
+        if (update.getDescription() != null) proj.setDescription(update.getDescription());
+        if (update.getTechStack() != null) proj.setTechStack(update.getTechStack());
+        if (update.getGithubUrl() != null) proj.setGithubUrl(update.getGithubUrl());
+        if (update.getLiveUrl() != null) proj.setLiveUrl(update.getLiveUrl());
+        return projectRepository.save(proj);
+    }
+
+    @Transactional
+    public Experience updateExperience(UUID userId, UUID experienceId, Experience update) {
+        Experience exp = experienceRepository.findById(experienceId)
+                .orElseThrow(() -> new ResourceNotFoundException("Experience", "id", experienceId));
+        if (!exp.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Cannot update another user's experience");
+        }
+        if (update.getTitle() != null) exp.setTitle(update.getTitle());
+        if (update.getCompany() != null) exp.setCompany(update.getCompany());
+        if (update.getLocation() != null) exp.setLocation(update.getLocation());
+        if (update.getStartDate() != null) exp.setStartDate(update.getStartDate());
+        if (update.getEndDate() != null) exp.setEndDate(update.getEndDate());
+        if (update.getDescription() != null) exp.setDescription(update.getDescription());
+        return experienceRepository.save(exp);
+    }
+
+    @Transactional
+    public Certification updateCertification(UUID userId, UUID certId, Certification update) {
+        Certification cert = certificationRepository.findById(certId)
+                .orElseThrow(() -> new ResourceNotFoundException("Certification", "id", certId));
+        if (!cert.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Cannot update another user's certification");
+        }
+        if (update.getTitle() != null) cert.setTitle(update.getTitle());
+        if (update.getIssuer() != null) cert.setIssuer(update.getIssuer());
+        if (update.getIssueDate() != null) cert.setIssueDate(update.getIssueDate());
+        if (update.getCredentialUrl() != null) cert.setCredentialUrl(update.getCredentialUrl());
+        return certificationRepository.save(cert);
+    }
+
+    @Transactional
+    public Achievement updateAchievement(UUID userId, UUID achievementId, Achievement update) {
+        Achievement ach = achievementRepository.findById(achievementId)
+                .orElseThrow(() -> new ResourceNotFoundException("Achievement", "id", achievementId));
+        if (!ach.getUser().getId().equals(userId)) {
+            throw new RuntimeException("Unauthorized: Cannot update another user's achievement");
+        }
+        if (update.getTitle() != null) ach.setTitle(update.getTitle());
+        if (update.getDescription() != null) ach.setDescription(update.getDescription());
+        if (update.getDate() != null) ach.setDate(update.getDate());
+        return achievementRepository.save(ach);
+    }
 }

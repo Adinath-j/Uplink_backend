@@ -58,6 +58,8 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/h2-console/**",
                                 "/actuator/**",
+                                "/ws/**",
+                                "/ws-raw/**",
                                 "/error"
                         ).permitAll()
                         .requestMatchers("/api/admin/**").hasAnyAuthority("ROLE_ADMIN", "ADMIN")

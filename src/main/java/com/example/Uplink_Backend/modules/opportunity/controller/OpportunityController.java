@@ -5,6 +5,7 @@ import com.example.Uplink_Backend.common.security.UserPrincipal;
 import com.example.Uplink_Backend.modules.opportunity.dto.CreateOpportunityRequest;
 import com.example.Uplink_Backend.modules.opportunity.dto.ExternalIngestionRequest;
 import com.example.Uplink_Backend.modules.opportunity.entity.Opportunity;
+import com.example.Uplink_Backend.modules.opportunity.entity.SavedOpportunity;
 import com.example.Uplink_Backend.modules.opportunity.service.OpportunityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -16,6 +17,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -80,5 +82,31 @@ public class OpportunityController {
     public ResponseEntity<ApiResponse<Opportunity>> verifyOpportunity(@PathVariable UUID id, @RequestParam boolean isVerified) {
         Opportunity opp = opportunityService.verifyOpportunity(id, isVerified);
         return ResponseEntity.ok(ApiResponse.ok("Opportunity verification updated", opp));
+    }
+
+    @PostMapping("/{id}/save")
+    @Operation(summary = "Save / bookmark an opportunity for current user")
+    public ResponseEntity<ApiResponse<SavedOpportunity>> saveOpportunity(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable UUID id) {
+        SavedOpportunity saved = opportunityService.saveOpportunity(userPrincipal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.ok("Opportunity saved to bookmarks", saved));
+    }
+
+    @DeleteMapping("/{id}/save")
+    @Operation(summary = "Remove an opportunity from bookmarks")
+    public ResponseEntity<ApiResponse<Void>> unsaveOpportunity(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable UUID id) {
+        opportunityService.unsaveOpportunity(userPrincipal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.ok("Opportunity removed from bookmarks", null));
+    }
+
+    @GetMapping("/saved")
+    @Operation(summary = "Get all bookmarked opportunities for current user")
+    public ResponseEntity<ApiResponse<List<Opportunity>>> getSavedOpportunities(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        List<Opportunity> savedList = opportunityService.getSavedOpportunities(userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Saved opportunities retrieved", savedList));
     }
 }

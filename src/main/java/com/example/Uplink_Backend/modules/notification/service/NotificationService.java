@@ -7,6 +7,7 @@ import com.example.Uplink_Backend.modules.notification.entity.Notification;
 import com.example.Uplink_Backend.modules.notification.repository.NotificationRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,10 +18,14 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public NotificationService(NotificationRepository notificationRepository, UserRepository userRepository) {
+    public NotificationService(NotificationRepository notificationRepository,
+                               UserRepository userRepository,
+                               SimpMessagingTemplate messagingTemplate) {
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -29,7 +34,16 @@ public class NotificationService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
 
         Notification notification = new Notification(user, title, message, type);
-        return notificationRepository.save(notification);
+        Notification saved = notificationRepository.save(notification);
+
+        // Real-time WebSocket delivery for push alerts
+        try {
+            messagingTemplate.convertAndSend("/topic/user." + userId + ".notifications", saved);
+        } catch (Exception e) {
+            System.err.println("Failed to broadcast notification via WebSocket: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     public Page<Notification> getUserNotifications(UUID userId, Pageable pageable) {
