@@ -14,6 +14,8 @@ public class SendMessageRequest {
 
     private String messageType = "TEXT"; // TEXT, FILE, LINK
 
+    private String clientMessageId;
+
     public UUID getConversationId() {
         return conversationId;
     }
@@ -36,5 +38,13 @@ public class SendMessageRequest {
 
     public void setMessageType(String messageType) {
         this.messageType = messageType;
+    }
+
+    public String getClientMessageId() {
+        return clientMessageId;
+    }
+
+    public void setClientMessageId(String clientMessageId) {
+        this.clientMessageId = clientMessageId;
     }
 }

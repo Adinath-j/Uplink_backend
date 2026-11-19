@@ -35,6 +35,9 @@ public class Message {
     @Column(name = "read_at")
     private Instant readAt;
 
+    @Column(name = "client_message_id", length = 100)
+    private String clientMessageId;
+
     @Column(name = "created_at", updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -92,6 +95,14 @@ public class Message {
 
     public void setMessageType(String messageType) {
         this.messageType = messageType;
+    }
+
+    public String getClientMessageId() {
+        return clientMessageId;
+    }
+
+    public void setClientMessageId(String clientMessageId) {
+        this.clientMessageId = clientMessageId;
     }
 
     public Boolean getIsRead() {

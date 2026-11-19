@@ -4,8 +4,7 @@ import com.example.Uplink_Backend.common.exception.BadRequestException;
 import com.example.Uplink_Backend.common.exception.ResourceNotFoundException;
 import com.example.Uplink_Backend.modules.auth.entity.User;
 import com.example.Uplink_Backend.modules.auth.repository.UserRepository;
-import com.example.Uplink_Backend.modules.messaging.dto.CreateConversationRequest;
-import com.example.Uplink_Backend.modules.messaging.dto.SendMessageRequest;
+import com.example.Uplink_Backend.modules.messaging.dto.*;
 import com.example.Uplink_Backend.modules.messaging.entity.Conversation;
 import com.example.Uplink_Backend.modules.messaging.entity.ConversationMember;
 import com.example.Uplink_Backend.modules.messaging.entity.Message;
@@ -13,16 +12,15 @@ import com.example.Uplink_Backend.modules.messaging.repository.ConversationMembe
 import com.example.Uplink_Backend.modules.messaging.repository.ConversationRepository;
 import com.example.Uplink_Backend.modules.messaging.repository.MessageRepository;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class MessagingService {
@@ -47,10 +45,40 @@ public class MessagingService {
 
     @Transactional
     public Conversation createConversation(UUID creatorId, CreateConversationRequest request) {
+        return createOrGetConversationEntity(creatorId, request);
+    }
+
+    @Transactional
+    public ConversationDto getOrCreateConversation(UUID creatorId, CreateConversationRequest request) {
+        Conversation conversation = createOrGetConversationEntity(creatorId, request);
+        return toConversationDto(conversation, creatorId);
+    }
+
+    private Conversation createOrGetConversationEntity(UUID creatorId, CreateConversationRequest request) {
         User creator = userRepository.findById(creatorId)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "id", creatorId));
 
-        Conversation conversation = new Conversation(request.getType() != null ? request.getType() : "DIRECT");
+        List<UUID> participants = request.getParticipantIds();
+        if (participants == null || participants.isEmpty()) {
+            throw new BadRequestException("At least one recipient/participant is required to start a conversation");
+        }
+
+        boolean isDirect = "DIRECT".equalsIgnoreCase(request.getType()) || participants.size() == 1;
+
+        // Idempotent 1-on-1 check
+        if (isDirect && participants.size() == 1) {
+            UUID recipientId = participants.get(0);
+            if (recipientId.equals(creatorId)) {
+                throw new BadRequestException("You cannot start a direct conversation with yourself");
+            }
+
+            List<Conversation> existing = conversationRepository.findDirectConversationBetweenUsers(creatorId, recipientId);
+            if (!existing.isEmpty()) {
+                return existing.get(0);
+            }
+        }
+
+        Conversation conversation = new Conversation(isDirect ? "DIRECT" : "GROUP");
         Conversation savedConversation = conversationRepository.save(conversation);
 
         // Add creator
@@ -61,7 +89,7 @@ public class MessagingService {
         Set<UUID> addedIds = new HashSet<>();
         addedIds.add(creatorId);
 
-        for (UUID participantId : request.getParticipantIds()) {
+        for (UUID participantId : participants) {
             if (!addedIds.contains(participantId)) {
                 User participant = userRepository.findById(participantId).orElse(null);
                 if (participant != null) {
@@ -80,6 +108,59 @@ public class MessagingService {
         return conversationRepository.findConversationsByUserId(userId);
     }
 
+    public List<ConversationDto> getUserConversationDtos(UUID userId) {
+        List<Conversation> conversations = conversationRepository.findConversationsByUserId(userId);
+        return conversations.stream()
+                .map(c -> toConversationDto(c, userId))
+                .collect(Collectors.toList());
+    }
+
+    public ConversationDto getConversationDto(UUID conversationId, UUID userId) {
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() -> new ResourceNotFoundException("Conversation", "id", conversationId));
+        if (!memberRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+            throw new BadRequestException("You are not a member of this conversation");
+        }
+        return toConversationDto(conversation, userId);
+    }
+
+    public ConversationDto toConversationDto(Conversation conversation, UUID currentUserId) {
+        ConversationDto dto = new ConversationDto();
+        dto.setId(conversation.getId());
+        dto.setType(conversation.getType());
+        dto.setCreatedAt(conversation.getCreatedAt());
+        dto.setUpdatedAt(conversation.getUpdatedAt());
+
+        List<ConversationMember> members = conversation.getMembers();
+        if (members == null || members.isEmpty()) {
+            members = memberRepository.findByConversationId(conversation.getId());
+        }
+
+        List<ConversationDto.MemberSummary> memberSummaries = new ArrayList<>();
+        if (members != null) {
+            for (ConversationMember m : members) {
+                User u = m.getUser();
+                ConversationDto.UserSummary userSummary = u != null
+                        ? new ConversationDto.UserSummary(u.getId(), u.getFullName(), u.getEmail())
+                        : null;
+                memberSummaries.add(new ConversationDto.MemberSummary(m.getId(), userSummary, m.getRole(), m.getJoinedAt()));
+            }
+        }
+        dto.setMembers(memberSummaries);
+
+        // Fetch latest message
+        Optional<Message> lastMessageOpt = messageRepository.findFirstByConversationIdOrderByCreatedAtDesc(conversation.getId());
+        lastMessageOpt.ifPresent(dto::setLastMessage);
+
+        // Fetch unread count for current user
+        if (currentUserId != null) {
+            long unread = messageRepository.countUnreadMessages(conversation.getId(), currentUserId);
+            dto.setUnreadCount(unread);
+        }
+
+        return dto;
+    }
+
     @Transactional
     public Message sendMessage(UUID senderId, SendMessageRequest request) {
         Conversation conversation = conversationRepository.findById(request.getConversationId())
@@ -94,6 +175,9 @@ public class MessagingService {
         }
 
         Message message = new Message(conversation, sender, request.getContent(), request.getMessageType());
+        if (request.getClientMessageId() != null) {
+            message.setClientMessageId(request.getClientMessageId());
+        }
         Message savedMessage = messageRepository.save(message);
 
         conversation.setUpdatedAt(Instant.now());
@@ -104,7 +188,7 @@ public class MessagingService {
             // Broadcast to the conversation room
             messagingTemplate.convertAndSend("/topic/conversations." + conversation.getId(), savedMessage);
 
-            // Broadcast to recipients' personal channels for in-app alert toasts
+            // Broadcast to recipients' personal channels for in-app alert toasts & inbox sync
             List<ConversationMember> members = memberRepository.findByConversationId(conversation.getId());
             for (ConversationMember member : members) {
                 if (member.getUser() != null && !member.getUser().getId().equals(senderId)) {
@@ -127,6 +211,37 @@ public class MessagingService {
 
     @Transactional
     public void markConversationAsRead(UUID conversationId, UUID userId) {
-        messageRepository.markAllAsRead(conversationId, userId, Instant.now());
+        if (!memberRepository.existsByConversationIdAndUserId(conversationId, userId)) {
+            throw new BadRequestException("You are not a member of this conversation");
+        }
+        Instant readAt = Instant.now();
+        messageRepository.markAllAsRead(conversationId, userId, readAt);
+
+        // Broadcast read receipt to room
+        try {
+            ReadReceiptNotification receipt = new ReadReceiptNotification(conversationId, userId, readAt);
+            messagingTemplate.convertAndSend("/topic/conversations." + conversationId + ".read", receipt);
+        } catch (Exception e) {
+            System.err.println("Failed to broadcast read receipt via WebSocket: " + e.getMessage());
+        }
+    }
+
+    public void broadcastTyping(UUID conversationId, UUID userId, String userName, boolean isTyping) {
+        try {
+            TypingNotification notif = new TypingNotification(conversationId, userId, userName, isTyping);
+            messagingTemplate.convertAndSend("/topic/conversations." + conversationId + ".typing", notif);
+        } catch (Exception e) {
+            System.err.println("Failed to broadcast typing via WebSocket: " + e.getMessage());
+        }
+    }
+
+    public List<UserSearchResultDto> searchPeers(UUID currentUserId, String query) {
+        if (query == null || query.trim().length() < 1) {
+            return Collections.emptyList();
+        }
+        List<User> users = userRepository.searchUsers(query.trim(), currentUserId, PageRequest.of(0, 20));
+        return users.stream()
+                .map(u -> new UserSearchResultDto(u.getId(), u.getFullName(), u.getEmail()))
+                .collect(Collectors.toList());
     }
 }

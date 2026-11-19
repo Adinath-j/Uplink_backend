@@ -2,9 +2,10 @@ package com.example.Uplink_Backend.modules.messaging.controller;
 
 import com.example.Uplink_Backend.common.dto.ApiResponse;
 import com.example.Uplink_Backend.common.security.UserPrincipal;
+import com.example.Uplink_Backend.modules.messaging.dto.ConversationDto;
 import com.example.Uplink_Backend.modules.messaging.dto.CreateConversationRequest;
 import com.example.Uplink_Backend.modules.messaging.dto.SendMessageRequest;
-import com.example.Uplink_Backend.modules.messaging.entity.Conversation;
+import com.example.Uplink_Backend.modules.messaging.dto.UserSearchResultDto;
 import com.example.Uplink_Backend.modules.messaging.entity.Message;
 import com.example.Uplink_Backend.modules.messaging.service.MessagingService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -20,7 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/messages")
+@RequestMapping({"/api/conversations", "/api/messages"})
 @Tag(name = "8. Messaging Module", description = "Endpoints for Direct & Group Conversations, Messaging, Links, and Read Receipts")
 public class MessagingController {
 
@@ -30,24 +31,33 @@ public class MessagingController {
         this.messagingService = messagingService;
     }
 
-    @PostMapping("/conversations")
-    @Operation(summary = "Start a new conversation (Direct or Group with candidate, recruiter, or peer)")
-    public ResponseEntity<ApiResponse<Conversation>> createConversation(
+    @PostMapping({"", "/conversations"})
+    @Operation(summary = "Start or get existing direct conversation, or start a group conversation")
+    public ResponseEntity<ApiResponse<ConversationDto>> createConversation(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
-            @Valid @RequestBody CreateConversationRequest request) {
-        Conversation conversation = messagingService.createConversation(userPrincipal.getId(), request);
-        return ResponseEntity.ok(ApiResponse.created("Conversation created", conversation));
+            @RequestBody CreateConversationRequest request) {
+        ConversationDto conversation = messagingService.getOrCreateConversation(userPrincipal.getId(), request);
+        return ResponseEntity.ok(ApiResponse.ok("Conversation ready", conversation));
     }
 
-    @GetMapping("/conversations")
-    @Operation(summary = "Get all conversations for current user")
-    public ResponseEntity<ApiResponse<List<Conversation>>> getMyConversations(
+    @GetMapping({"", "/conversations"})
+    @Operation(summary = "Get all conversations for current user with unread counts and latest messages")
+    public ResponseEntity<ApiResponse<List<ConversationDto>>> getMyConversations(
             @AuthenticationPrincipal UserPrincipal userPrincipal) {
-        List<Conversation> conversations = messagingService.getUserConversations(userPrincipal.getId());
+        List<ConversationDto> conversations = messagingService.getUserConversationDtos(userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.ok("User conversations retrieved", conversations));
     }
 
-    @PostMapping("/send")
+    @GetMapping("/{conversationId}")
+    @Operation(summary = "Get conversation details by ID")
+    public ResponseEntity<ApiResponse<ConversationDto>> getConversation(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable UUID conversationId) {
+        ConversationDto conversation = messagingService.getConversationDto(conversationId, userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Conversation details retrieved", conversation));
+    }
+
+    @PostMapping({"/send", "/conversations/send"})
     @Operation(summary = "Send a text message, attachment link, or system notification in a conversation")
     public ResponseEntity<ApiResponse<Message>> sendMessage(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -56,7 +66,7 @@ public class MessagingController {
         return ResponseEntity.ok(ApiResponse.created("Message sent", message));
     }
 
-    @GetMapping("/conversation/{conversationId}")
+    @GetMapping({"/conversation/{conversationId}", "/{conversationId}/messages"})
     @Operation(summary = "Get conversation message thread (paginated)")
     public ResponseEntity<ApiResponse<Page<Message>>> getMessages(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
@@ -66,12 +76,21 @@ public class MessagingController {
         return ResponseEntity.ok(ApiResponse.ok("Messages retrieved", messages));
     }
 
-    @PostMapping("/conversation/{conversationId}/read")
+    @PostMapping({"/conversation/{conversationId}/read", "/{conversationId}/read"})
     @Operation(summary = "Mark all unread messages in conversation as read (Read receipt)")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @PathVariable UUID conversationId) {
         messagingService.markConversationAsRead(conversationId, userPrincipal.getId());
         return ResponseEntity.ok(ApiResponse.ok("Conversation marked as read", null));
+    }
+
+    @GetMapping("/users/search")
+    @Operation(summary = "Search users/peers to start a new chat")
+    public ResponseEntity<ApiResponse<List<UserSearchResultDto>>> searchPeers(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam(name = "query", defaultValue = "") String query) {
+        List<UserSearchResultDto> peers = messagingService.searchPeers(userPrincipal.getId(), query);
+        return ResponseEntity.ok(ApiResponse.ok("Peer search results", peers));
     }
 }
