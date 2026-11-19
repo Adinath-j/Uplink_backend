@@ -21,15 +21,13 @@ public class FileStorageService {
 
     private final Path fileStorageLocation;
 
-    @Value("${uplink.storage.supabase.url:}")
-    private String supabaseUrl;
-
-    public FileStorageService(@Value("${uplink.storage.upload-dir:./uploads}") String uploadDir) {
+    public FileStorageService(
+            @Value("${uplink.storage.upload-dir:${java.io.tmpdir}/uplink-uploads}") String uploadDir) {
         this.fileStorageLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
         try {
             Files.createDirectories(this.fileStorageLocation);
         } catch (Exception ex) {
-            logger.error("Could not create upload directory: {}", uploadDir, ex);
+            logger.error("Could not create upload directory: {}", this.fileStorageLocation, ex);
         }
     }
 
@@ -41,21 +39,20 @@ public class FileStorageService {
             fileExtension = originalFilename.substring(i);
         }
 
-        String fileName = UUID.randomUUID().toString() + fileExtension;
+        String safeSubfolder = (subfolder != null && !subfolder.isBlank()) ? subfolder : "general";
+        String fileName = UUID.randomUUID() + fileExtension;
 
         try {
-            Path targetFolder = this.fileStorageLocation.resolve(subfolder != null ? subfolder : "general");
+            Path targetFolder = this.fileStorageLocation.resolve(safeSubfolder).normalize();
+            if (!targetFolder.startsWith(this.fileStorageLocation)) {
+                throw new IllegalArgumentException("Invalid subfolder path");
+            }
             Files.createDirectories(targetFolder);
 
             Path targetLocation = targetFolder.resolve(fileName);
             Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
 
-            // If Supabase Storage is configured in env, we can format standard Supabase URL; otherwise local file endpoint
-            if (supabaseUrl != null && !supabaseUrl.isBlank()) {
-                return String.format("%s/storage/v1/object/public/uplink-files/%s/%s", supabaseUrl, subfolder, fileName);
-            }
-
-            return "/api/files/download/" + (subfolder != null ? subfolder + "/" : "") + fileName;
+            return "/api/files/download/" + safeSubfolder + "/" + fileName;
         } catch (IOException ex) {
             logger.error("Failed to store file: {}", fileName, ex);
             throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
@@ -65,6 +62,10 @@ public class FileStorageService {
     public byte[] loadFileAsBytes(String relativePath) {
         try {
             Path filePath = this.fileStorageLocation.resolve(relativePath).normalize();
+            if (!filePath.startsWith(this.fileStorageLocation)) {
+                logger.warn("Blocked path traversal attempt: {}", relativePath);
+                return new byte[0];
+            }
             File file = filePath.toFile();
             if (file.exists()) {
                 return Files.readAllBytes(filePath);
