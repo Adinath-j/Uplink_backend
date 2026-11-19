@@ -1,9 +1,11 @@
 package com.example.Uplink_Backend.modules.opportunity.entity;
 
+import com.example.Uplink_Backend.common.config.JacksonConfig;
 import com.example.Uplink_Backend.modules.auth.entity.User;
 import com.example.Uplink_Backend.modules.recruiter.entity.Company;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -55,9 +57,11 @@ public class Opportunity {
     @Column(name = "application_url", columnDefinition = "TEXT")
     private String applicationUrl;
 
+    @JsonDeserialize(using = JacksonConfig.FlexibleLocalDateDeserializer.class)
     @Column(name = "start_date")
     private LocalDate startDate;
 
+    @JsonDeserialize(using = JacksonConfig.FlexibleLocalDateDeserializer.class)
     private LocalDate deadline;
 
     @Column(name = "is_active")

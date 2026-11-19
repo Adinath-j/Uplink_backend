@@ -1,7 +1,9 @@
 package com.example.Uplink_Backend.modules.user.entity;
 
+import com.example.Uplink_Backend.common.config.JacksonConfig;
 import com.example.Uplink_Backend.modules.auth.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,6 +28,7 @@ public class Achievement {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @JsonDeserialize(using = JacksonConfig.FlexibleLocalDateDeserializer.class)
     private LocalDate date;
 
     @Column(name = "created_at", updatable = false)

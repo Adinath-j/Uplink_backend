@@ -1,7 +1,9 @@
 package com.example.Uplink_Backend.modules.user.entity;
 
+import com.example.Uplink_Backend.common.config.JacksonConfig;
 import com.example.Uplink_Backend.modules.auth.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -28,9 +30,11 @@ public class Experience {
 
     private String location;
 
+    @JsonDeserialize(using = JacksonConfig.FlexibleLocalDateDeserializer.class)
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
+    @JsonDeserialize(using = JacksonConfig.FlexibleLocalDateDeserializer.class)
     @Column(name = "end_date")
     private LocalDate endDate;
 
