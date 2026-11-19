@@ -1,6 +1,7 @@
 package com.example.Uplink_Backend.modules.opportunity.entity;
 
 import com.example.Uplink_Backend.modules.auth.entity.User;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.Instant;
 import java.util.UUID;
@@ -15,6 +16,7 @@ public class SavedOpportunity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -42,6 +44,7 @@ public class SavedOpportunity {
         this.id = id;
     }
 
+    @JsonIgnore
     public User getUser() {
         return user;
     }
