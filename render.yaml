@@ -6,7 +6,7 @@ services:
     plan: free
     region: singapore
     branch: main
-    healthCheckPath: /actuator/health
+    healthCheckPath: /health
     envVars:
       - key: PORT
         value: 8080

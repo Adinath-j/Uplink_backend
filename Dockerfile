@@ -33,11 +33,11 @@ EXPOSE 8080
 # Copy executable jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# JVM Container Ergonomics and GC optimization
-ENV JAVA_OPTS="-XX:+UseG1GC -XX:MaxRAMPercentage=75.0 -Djava.security.egd=file:/dev/./urandom"
+# JVM Container Ergonomics and GC optimization (tuned for 512MB / 0.1 CPU container)
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=65.0 -XX:TieredStopAtLevel=1 -Xss512k -XX:+UseSerialGC -Djava.security.egd=file:/dev/./urandom"
 
 # Healthcheck to verify Tomcat status
 HEALTHCHECK --interval=30s --timeout=10s --start-period=45s --retries=3 \
-  CMD curl -f http://localhost:8080/actuator/health || exit 0
+  CMD curl -f http://localhost:8080/health || exit 0
 
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

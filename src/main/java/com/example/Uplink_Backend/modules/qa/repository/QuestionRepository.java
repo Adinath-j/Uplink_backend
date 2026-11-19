@@ -21,8 +21,8 @@ public interface QuestionRepository extends JpaRepository<Question, UUID> {
     Page<Question> findTrending(Pageable pageable);
 
     @Query("SELECT q FROM Question q WHERE " +
-           "(:topic IS NULL OR LOWER(q.topicTags) LIKE LOWER(CONCAT('%', :topic, '%'))) AND " +
-           "(:keyword IS NULL OR (LOWER(q.title) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(q.description) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+           "(CAST(:topic AS string) IS NULL OR LOWER(q.topicTags) LIKE LOWER(CONCAT('%', CAST(:topic AS string), '%'))) AND " +
+           "(CAST(:keyword AS string) IS NULL OR (LOWER(q.title) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR LOWER(q.description) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))) " +
            "ORDER BY q.createdAt DESC")
     Page<Question> searchQuestions(@Param("topic") String topic,
                                    @Param("keyword") String keyword,
