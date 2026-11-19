@@ -140,7 +140,16 @@ public class OpportunityService {
     }
 
     public Page<Opportunity> searchOpportunities(String type, String workMode, String location, String keyword, Pageable pageable) {
-        return opportunityRepository.searchOpportunities(type, workMode, location, keyword, pageable);
+        String cleanType = type != null && !type.trim().isEmpty() ? type.trim() : null;
+        String cleanMode = workMode != null && !workMode.trim().isEmpty() ? workMode.trim() : null;
+        String cleanLoc = location != null && !location.trim().isEmpty() ? location.trim() : null;
+        String cleanKw = keyword != null && !keyword.trim().isEmpty() ? keyword.trim() : null;
+
+        if (cleanType == null && cleanMode == null && cleanLoc == null && cleanKw == null) {
+            return opportunityRepository.findByIsActiveTrue(pageable);
+        }
+
+        return opportunityRepository.searchOpportunities(cleanType, cleanMode, cleanLoc, cleanKw, pageable);
     }
 
     public Opportunity getOpportunityById(UUID id) {

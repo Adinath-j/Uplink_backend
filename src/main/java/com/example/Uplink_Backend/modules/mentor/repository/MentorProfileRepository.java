@@ -14,11 +14,11 @@ import java.util.UUID;
 public interface MentorProfileRepository extends JpaRepository<MentorProfile, UUID> {
 
     @Query("SELECT m FROM MentorProfile m WHERE " +
-           "(:domain IS NULL OR LOWER(m.domains) LIKE LOWER(CONCAT('%', :domain, '%'))) AND " +
-           "(:keyword IS NULL OR (LOWER(m.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.organization) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.designation) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
-           "LOWER(m.skills) LIKE LOWER(CONCAT('%', :keyword, '%')))) " +
+           "(CAST(:domain AS string) IS NULL OR LOWER(m.domains) LIKE LOWER(CONCAT('%', CAST(:domain AS string), '%'))) AND " +
+           "(CAST(:keyword AS string) IS NULL OR (LOWER(m.name) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR " +
+           "LOWER(m.organization) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR " +
+           "LOWER(m.designation) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')) OR " +
+           "LOWER(m.skills) LIKE LOWER(CONCAT('%', CAST(:keyword AS string), '%')))) " +
            "ORDER BY m.rating DESC, m.sessionsCompleted DESC")
     Page<MentorProfile> searchMentors(@Param("domain") String domain,
                                      @Param("keyword") String keyword,
