@@ -45,8 +45,12 @@ public class EmailService {
     @Value("${spring.mail.username:}")
     private String smtpMailFrom;
 
-    public EmailService(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
+    public EmailService() {
+        this(new ObjectMapper());
+    }
+
+    public EmailService(@Autowired(required = false) ObjectMapper objectMapper) {
+        this.objectMapper = (objectMapper != null) ? objectMapper : new ObjectMapper();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
