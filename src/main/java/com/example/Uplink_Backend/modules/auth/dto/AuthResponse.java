@@ -11,6 +11,8 @@ public class AuthResponse {
     private String email;
     private String fullName;
     private List<String> roles;
+    private Boolean requiresVerification;
+    private Boolean isVerified;
 
     public AuthResponse() {}
 
@@ -21,6 +23,31 @@ public class AuthResponse {
         this.email = email;
         this.fullName = fullName;
         this.roles = roles;
+        this.isVerified = true;
+        this.requiresVerification = false;
+    }
+
+    public AuthResponse(String token, String refreshToken, UUID id, String email, String fullName, List<String> roles, Boolean isVerified) {
+        this.token = token;
+        this.refreshToken = refreshToken;
+        this.id = id;
+        this.email = email;
+        this.fullName = fullName;
+        this.roles = roles;
+        this.isVerified = isVerified;
+        this.requiresVerification = Boolean.FALSE.equals(isVerified);
+    }
+
+    public static AuthResponse verificationRequired(String email, String fullName, List<String> roles) {
+        AuthResponse res = new AuthResponse();
+        res.setEmail(email);
+        res.setFullName(fullName);
+        res.setRoles(roles);
+        res.setToken(null);
+        res.setRefreshToken(null);
+        res.setRequiresVerification(true);
+        res.setIsVerified(false);
+        return res;
     }
 
     public String getToken() {
@@ -29,6 +56,14 @@ public class AuthResponse {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getAccessToken() {
+        return token;
+    }
+
+    public void setAccessToken(String accessToken) {
+        this.token = accessToken;
     }
 
     public String getRefreshToken() {
@@ -77,5 +112,21 @@ public class AuthResponse {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public Boolean getRequiresVerification() {
+        return requiresVerification;
+    }
+
+    public void setRequiresVerification(Boolean requiresVerification) {
+        this.requiresVerification = requiresVerification;
+    }
+
+    public Boolean getIsVerified() {
+        return isVerified;
+    }
+
+    public void setIsVerified(Boolean isVerified) {
+        this.isVerified = isVerified;
     }
 }

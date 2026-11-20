@@ -91,6 +91,6 @@ public class UserPrincipal implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return isActive;
+        return isActive && isVerified;
     }
 }
