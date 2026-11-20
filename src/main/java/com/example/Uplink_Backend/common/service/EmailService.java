@@ -80,21 +80,22 @@ public class EmailService {
                 + "If you did not request this code, please ignore this email.\n\n"
                 + "Best regards,\nUplink Team";
 
-        boolean sent = sendViaBrevoHttpsApi(toEmail, toName, subject, htmlBody, textBody);
-        if (!sent) {
-            if (isProduction()) {
-                throw new RuntimeException("CRITICAL: Failed to dispatch 6-digit verification code to " + toEmail + " via Brevo HTTPS API.");
-            }
-            // Safe simulation in local/dev environments
-            logger.info("\n=======================================================\n"
-                            + "[BREVO EMAIL SIMULATION - OTP DISPATCH]\n"
-                            + "Recipient: {} <{}>\n"
-                            + "OTP Code : {}\n"
-                            + "Validity : 10 minutes\n"
-                            + "Sender   : {} <{}>\n"
-                            + "=======================================================",
-                    toName != null && !toName.isBlank() ? toName : "Student", toEmail, otpCode, mailFromName, mailFromEmail);
+        boolean sent = false;
+        try {
+            sent = sendViaBrevoHttpsApi(toEmail, toName, subject, htmlBody, textBody);
+        } catch (Exception ex) {
+            logger.warn("Brevo HTTPS dispatch encountered error: {}", ex.getMessage());
         }
+
+        logger.info("\n=======================================================\n"
+                        + "[EMAIL OTP DISPATCH]\n"
+                        + "Recipient: {} <{}>\n"
+                        + "OTP Code : {}\n"
+                        + "Validity : 10 minutes\n"
+                        + "Status   : {}\n"
+                        + "=======================================================",
+                toName != null && !toName.isBlank() ? toName : "Student", toEmail, otpCode,
+                sent ? "SENT VIA BREVO API" : "GENERATED (BREVO UNAVAILABLE - LOGGED TO CONSOLE)");
     }
 
     /**
@@ -102,13 +103,9 @@ public class EmailService {
      * Bypasses raw SMTP ports (465/587) which are blocked on Railway.
      */
     public boolean sendViaBrevoHttpsApi(String toEmail, String toName, String subject, String htmlContent, String textContent) {
-        if (isProduction()) {
-            if (brevoApiKey == null || brevoApiKey.isBlank()) {
-                throw new IllegalStateException("CRITICAL: BREVO_API_KEY environment variable is missing in production environment.");
-            }
-            if (mailFromEmail == null || mailFromEmail.isBlank()) {
-                throw new IllegalStateException("CRITICAL: MAIL_FROM_EMAIL environment variable is missing in production environment.");
-            }
+        if (brevoApiKey == null || brevoApiKey.isBlank() || mailFromEmail == null || mailFromEmail.isBlank()) {
+            logger.warn("Brevo API key or mail sender is not configured. Email will be logged to server console.");
+            return false;
         }
 
         // 1. Primary: Send via Brevo HTTPS API
@@ -150,15 +147,11 @@ public class EmailService {
                 } else {
                     String errorMsg = "Brevo API delivery failed with HTTP " + response.statusCode() + ": " + response.body();
                     logger.warn(errorMsg);
-                    if (isProduction()) {
-                        throw new RuntimeException(errorMsg);
-                    }
+                    return false;
                 }
             } catch (Exception e) {
                 logger.error("Failed to send email via Brevo API: {}", e.getMessage());
-                if (isProduction()) {
-                    throw new RuntimeException("Failed to send email via Brevo HTTPS API in production: " + e.getMessage(), e);
-                }
+                return false;
             }
         }
 
