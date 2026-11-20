@@ -12,18 +12,33 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import com.example.Uplink_Backend.common.service.CloudinaryService;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/profile")
+@RequestMapping(value = {"/api/profile", "/api/profiles"})
 @Tag(name = "2. User & Profile Module", description = "Endpoints for Profile management, Academic Info, Skills, Portfolio Projects, Experiences, Certifications, and Achievements")
 public class UserProfileController {
 
     private final UserProfileService profileService;
+    private final CloudinaryService cloudinaryService;
 
-    public UserProfileController(UserProfileService profileService) {
+    public UserProfileController(UserProfileService profileService, CloudinaryService cloudinaryService) {
         this.profileService = profileService;
+        this.cloudinaryService = cloudinaryService;
+    }
+
+    @PostMapping(value = {"/avatar", "/me/avatar"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Upload profile picture / avatar to Cloudinary")
+    public ResponseEntity<ApiResponse<Profile>> uploadAvatar(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @RequestParam("file") MultipartFile file) {
+        String avatarUrl = cloudinaryService.uploadAvatarImage(file, userPrincipal.getId());
+        Profile updated = profileService.updateAvatar(userPrincipal.getId(), avatarUrl);
+        return ResponseEntity.ok(ApiResponse.ok("Avatar updated successfully", updated));
     }
 
     @GetMapping

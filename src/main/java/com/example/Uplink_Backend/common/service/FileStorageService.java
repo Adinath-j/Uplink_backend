@@ -59,6 +59,33 @@ public class FileStorageService {
         }
     }
 
+    public String storeBytes(byte[] bytes, String originalFilename, String subfolder) {
+        String fileExtension = "";
+        int i = originalFilename != null ? originalFilename.lastIndexOf('.') : -1;
+        if (i > 0) {
+            fileExtension = originalFilename.substring(i);
+        }
+
+        String safeSubfolder = (subfolder != null && !subfolder.isBlank()) ? subfolder.replace('\\', '/') : "general";
+        String fileName = UUID.randomUUID() + fileExtension;
+
+        try {
+            Path targetFolder = this.fileStorageLocation.resolve(safeSubfolder).normalize();
+            if (!targetFolder.startsWith(this.fileStorageLocation)) {
+                throw new IllegalArgumentException("Invalid subfolder path");
+            }
+            Files.createDirectories(targetFolder);
+
+            Path targetLocation = targetFolder.resolve(fileName);
+            Files.write(targetLocation, bytes);
+
+            return "/api/files/download/" + safeSubfolder + "/" + fileName;
+        } catch (IOException ex) {
+            logger.error("Failed to store byte file: {}", fileName, ex);
+            throw new RuntimeException("Could not store file " + fileName + ". Please try again!", ex);
+        }
+    }
+
     public byte[] loadFileAsBytes(String relativePath) {
         try {
             Path filePath = this.fileStorageLocation.resolve(relativePath).normalize();

@@ -84,6 +84,17 @@ public class UserProfileService {
         return profileRepository.save(profile);
     }
 
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "profiles", key = "#userId"),
+            @CacheEvict(value = "portfolios", key = "#userId")
+    })
+    public Profile updateAvatar(UUID userId, String avatarUrl) {
+        Profile profile = getOrCreateProfile(userId);
+        profile.setProfilePicture(avatarUrl);
+        return profileRepository.save(profile);
+    }
+
     @Cacheable(value = "portfolios", key = "#userId")
     public DigitalPortfolioDto getDigitalPortfolio(UUID userId) {
         User user = userRepository.findById(userId)

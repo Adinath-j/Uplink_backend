@@ -14,10 +14,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/resume")
+@RequestMapping(value = {"/api/resume", "/api/resumes"})
 @Tag(name = "11. Resume Module", description = "Endpoints for AI Resume Generation, LaTeX Compilation, PDF Export, and Version Management")
 public class ResumeController {
 
@@ -27,13 +28,30 @@ public class ResumeController {
         this.resumeService = resumeService;
     }
 
-    @PostMapping("/generate")
-    @Operation(summary = "Generate customized resume with LaTeX compilation and PDF URL from user profile")
+    @PostMapping(value = {"", "/generate"})
+    @Operation(summary = "Generate customized resume with OpenHTMLtoPDF compilation, Cloudinary upload, and PDF URL")
     public ResponseEntity<ApiResponse<ResumeDto>> generateResume(
             @AuthenticationPrincipal UserPrincipal userPrincipal,
             @RequestBody ResumeGenerateRequest request) {
         ResumeDto resume = resumeService.generateResume(userPrincipal.getId(), request);
         return ResponseEntity.ok(ApiResponse.ok("Resume generated successfully", resume));
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all generated resumes for current user")
+    public ResponseEntity<ApiResponse<List<ResumeDto>>> getMyResumes(
+            @AuthenticationPrincipal UserPrincipal userPrincipal) {
+        List<ResumeDto> list = resumeService.getUserResumes(userPrincipal.getId());
+        return ResponseEntity.ok(ApiResponse.ok("Resumes retrieved successfully", list));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Delete generated resume document")
+    public ResponseEntity<ApiResponse<Void>> deleteResume(
+            @AuthenticationPrincipal UserPrincipal userPrincipal,
+            @PathVariable UUID id) {
+        resumeService.deleteResume(userPrincipal.getId(), id);
+        return ResponseEntity.ok(ApiResponse.ok("Resume document deleted successfully", null));
     }
 
     @GetMapping("/download/{userId}")
