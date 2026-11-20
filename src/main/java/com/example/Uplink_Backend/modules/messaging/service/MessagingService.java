@@ -281,12 +281,36 @@ public class MessagingService {
     }
 
     public List<UserSearchResultDto> searchPeers(UUID currentUserId, String query) {
-        if (query == null || query.trim().length() < 1) {
-            return Collections.emptyList();
+        List<User> users;
+        if (query == null || query.trim().isEmpty()) {
+            users = userRepository.findSuggestedUsers(currentUserId, PageRequest.of(0, 30));
+        } else {
+            String q = query.trim();
+            users = userRepository.searchUsers(q, currentUserId, PageRequest.of(0, 30));
+            // If no match found, try collapsed repeating characters (e.g. "abhii" -> "abhi")
+            if (users.isEmpty() && q.length() >= 3) {
+                String collapsed = q.replaceAll("(.)\\1+", "$1");
+                if (!collapsed.equalsIgnoreCase(q)) {
+                    users = userRepository.searchUsers(collapsed, currentUserId, PageRequest.of(0, 30));
+                }
+            }
+            // If still no match and query length >= 4, try prefix matching
+            if (users.isEmpty() && q.length() >= 4) {
+                String prefix = q.substring(0, 3);
+                users = userRepository.searchUsers(prefix, currentUserId, PageRequest.of(0, 30));
+            }
         }
-        List<User> users = userRepository.searchUsers(query.trim(), currentUserId, PageRequest.of(0, 20));
         return users.stream()
-                .map(u -> new UserSearchResultDto(u.getId(), u.getFullName(), u.getEmail()))
+                .map(u -> {
+                    String roleName = null;
+                    if (u.getRoles() != null && !u.getRoles().isEmpty()) {
+                        roleName = u.getRoles().iterator().next().getName();
+                        if (roleName != null && roleName.startsWith("ROLE_")) {
+                            roleName = roleName.substring(5);
+                        }
+                    }
+                    return new UserSearchResultDto(u.getId(), u.getFullName(), u.getEmail(), roleName);
+                })
                 .collect(Collectors.toList());
     }
 }
