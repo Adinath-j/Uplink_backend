@@ -1,0 +1,21 @@
+{
+  "snapshot_date": "2026-11-20",
+  "timezone": "Asia/Kolkata",
+  "verified_opportunities": 19,
+  "verified_companies": 17,
+  "portals_audited": 16,
+  "counts_by_type": {
+    "COMPETITION": 3,
+    "HACKATHON": 4,
+    "INTERNSHIP": 1,
+    "JOB": 7,
+    "RESEARCH": 2,
+    "TRAINING": 2
+  },
+  "files": [
+    "verified_opportunities_2026-11-20.csv",
+    "verified_companies_2026-11-20.csv",
+    "portal_audit_2026-11-20.csv",
+    "opportunities_postgresql_2026-11-20.sql"
+  ]
+}

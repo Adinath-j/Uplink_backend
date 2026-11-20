@@ -1,0 +1,17 @@
+﻿portal_url,live_listings_extracted,valid_items_found,blockers_or_notes
+https://interndoor.com/,YES,0,"Public India internship/job feed visible (198 internships and 1,357 full-time shown); individual employer application pages could not be verified for shortlisted roles. URL was pasted twice; audited once."
+https://nextraise.ai/,PARTIAL,0,Public product page shows sample global jobs and a browse-jobs link; matched jobs require account/profile and no specific India-eligible role was verified.
+https://jobgether.com/talent/matches,NO,0,Talent-matching / senior-professional landing page; no public matched postings without sign-in.
+https://unstop.com/,YES,8,"Eight active, directly inspected AI/software-relevant events included. Expired and contradictory events excluded."
+https://www.workatastartup.com/,YES,0,"Public YC startup cards visible; sampled roles were US-only or Remote (US), not verified open to India. Full profile/apply flow requires sign-up."
+https://acciojob.com/,PARTIAL,0,Course and hiring-drive pages visible; placement/job-drive listing requires app/login or further interaction and no individual opening was verified.
+https://www.ziprecruiter.in/,NO,0,Landing page only; job search route available but no searched role results extracted from the supplied homepage.
+https://www.google.com/about/careers/applications/jobs/results,YES,0,"Global public search page reported 3,086 jobs, but the supplied default view showed global/US roles; no specific India-eligible software/AI role verified in this audit."
+https://skillmeet.ai/,NO,0,"Interview preparation, referrals and practice projects; no employer job postings surfaced."
+https://wonderin.ai/,NO,0,Job-seeker matching/auto-apply product; specific matched postings require user account.
+https://devconnectplatform.com/program,YES,1,"Public Verified Internship learning programme page; one live self-paced programme included as TRAINING, not paid employment."
+https://jpmc.fa.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1001/jobs?keyword=Software+Engineer&location=India&locationId=300000000289360&locationLevel=country&mode=location,YES,3,India search showed 108 open jobs (82 software engineering category); three relevant direct postings verified. One AI Agent Lead listing with Apply Before 2026-11-20 00:00 was excluded as already expired at check time.
+https://www.careerhub.com/multi-location-search?utm_source=google&utm_medium=cpc&utm_campaign=geo_in/pk&utm_source=google&utm_medium=cpc&utm_campaign=geo_us&gad_source=1&gad_campaignid=23992696549&gbraid=0AAAABDfAsZsFvX7VKot9gOyPgqk566_ig&gclid=CjwKCAjwotzWBhBFEiwA1JhPoC_QNgM4bl80sX_F4kPi6DJOzPP6F0OVYBuRyj55ZC-vw3scEhdT0hoCDnwQAvD_BwE,NO,0,Search product page visible but requires resume/profile and an executed multi-location search; no individual opening verified.
+https://hiringcafe.com/,YES,0,Latest public sample listings were US-based; India-filtered postings not extracted from the supplied default page.
+https://www.hirist.tech/k/mern-stack-jobs?ref=homepagetag,YES,0,"101 MERN vacancies shown in November 2026 with recent aggregator cards, but individual employer-board status was not verified; none included in the confirmed shortlist."
+https://builtin.com/jobs,YES,0,Public tech-job feed showed US roles in default view; no India-eligible role verified from the supplied URL.

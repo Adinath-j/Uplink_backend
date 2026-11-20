@@ -71,11 +71,11 @@ ON CONFLICT (name) DO NOTHING;
 
 -- TIER 1: USERS (Valid BCrypt Hashes: Student@123, Admin@123, Recruiter@123)
 INSERT INTO users (id, email, password, full_name, phone, is_verified, is_active) VALUES
-('11111111-1111-1111-1111-111111111111', 'admin@uplink.edu', '$2a$10$WcM5xIX3aid4vAYiMRCBjeJhSQLjumAbSBecCqvWcF9lNekLUu5fK', 'Uplink Platform Admin', '+91-9876543201', TRUE, TRUE),
-('22222222-2222-2222-2222-222222222222', 'ingestor@uplink.edu', '$2a$10$WcM5xIX3aid4vAYiMRCBjeJhSQLjumAbSBecCqvWcF9lNekLUu5fK', 'Uplink Opportunity Sync', '+91-9876543202', TRUE, TRUE),
-('33333333-3333-3333-3333-333333333333', 'recruiter@uplink.edu', '$2a$10$mdYYLjUl3Z.J5r5Bvq27Ae2RJU0jT6oarBMma8qcySbbGRLBVf0Hu', 'Ananya Deshmukh', '+91-9876543203', TRUE, TRUE),
-('44444444-4444-4444-4444-444444444444', 'student@uplink.edu', '$2a$10$mOlDuZoV4bNu8b.lGk/acuZSofvsdtlZldf70WCW5lQf9s1S8rpwa', 'Rohan Kulkarni', '+91-9876543204', TRUE, TRUE),
-('55555555-5555-5555-5555-555555555555', 'peer1@uplink.edu', '$2a$10$mOlDuZoV4bNu8b.lGk/acuZSofvsdtlZldf70WCW5lQf9s1S8rpwa', 'Sneha Nair', '+91-9876543205', TRUE, TRUE),
+('11111111-1111-1111-1111-111111111111', 'admin@uplink.edu', '$2a$10$WcM5xIX3aid4vAYiMRCBjeJhSQLjumAbSBecCqvWcF9lNekLUu5fK', 'Uplink Platform Admin', '+91-9876543201', FALSE, TRUE),
+('22222222-2222-2222-2222-222222222222', 'ingestor@uplink.edu', '$2a$10$WcM5xIX3aid4vAYiMRCBjeJhSQLjumAbSBecCqvWcF9lNekLUu5fK', 'Uplink Opportunity Sync', '+91-9876543202', FALSE, TRUE),
+('33333333-3333-3333-3333-333333333333', 'recruiter@uplink.edu', '$2a$10$mdYYLjUl3Z.J5r5Bvq27Ae2RJU0jT6oarBMma8qcySbbGRLBVf0Hu', 'Ananya Deshmukh', '+91-9876543203', FALSE, TRUE),
+('44444444-4444-4444-4444-444444444444', 'student@uplink.edu', '$2a$10$mOlDuZoV4bNu8b.lGk/acuZSofvsdtlZldf70WCW5lQf9s1S8rpwa', 'Rohan Kulkarni', '+91-9876543204', FALSE, TRUE),
+('55555555-5555-5555-5555-555555555555', 'peer1@uplink.edu', '$2a$10$mOlDuZoV4bNu8b.lGk/acuZSofvsdtlZldf70WCW5lQf9s1S8rpwa', 'Sneha Nair', '+91-9876543205', FALSE, TRUE),
 ('66666666-6666-6666-6666-666666666666', 'peer2@uplink.edu', '$2a$10$mOlDuZoV4bNu8b.lGk/acuZSofvsdtlZldf70WCW5lQf9s1S8rpwa', 'Karthik Subramanian', '+91-9876543206', FALSE, TRUE)
 ON CONFLICT (email) DO NOTHING;
 
@@ -238,17 +238,7 @@ WHERE u.email = 'recruiter@uplink.edu' AND c.name = 'Google'
 ON CONFLICT (user_id) DO NOTHING;
 
 
--- TIER 2: USER VERIFICATIONS
-INSERT INTO user_verifications (user_id, type, document_url, status, verified_by, verified_at)
-SELECT u.id, 'COLLEGE_ID', 'https://res.cloudinary.com/demo/image/upload/sample.pdf', 'APPROVED', adm.id, NOW()
-FROM users u, users adm WHERE u.email = 'student@uplink.edu' AND adm.email = 'admin@uplink.edu'
-UNION ALL
-SELECT u.id, 'IDENTITY_PROOF', 'https://res.cloudinary.com/demo/image/upload/sample.pdf', 'APPROVED', adm.id, NOW()
-FROM users u, users adm WHERE u.email = 'peer1@uplink.edu' AND adm.email = 'admin@uplink.edu'
-UNION ALL
-SELECT u.id, 'COLLEGE_ID', 'https://res.cloudinary.com/demo/image/upload/sample.pdf', 'PENDING', NULL, NULL
-FROM users u WHERE u.email = 'peer2@uplink.edu'
-ON CONFLICT DO NOTHING;
+-- TIER 2: USER VERIFICATIONS (Left empty: no fake verifications seeded)
 
 
 -- TIER 2: PROFILES
