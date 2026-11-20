@@ -60,6 +60,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(EmailNotVerifiedException.class)
+    public ResponseEntity<Map<String, Object>> handleEmailNotVerified(EmailNotVerifiedException ex, HttpServletRequest request) {
+        Map<String, Object> error = new HashMap<>();
+        error.put("success", false);
+        error.put("status", HttpStatus.FORBIDDEN.value());
+        error.put("code", "EMAIL_NOT_VERIFIED");
+        error.put("error", "EMAIL_NOT_VERIFIED");
+        error.put("message", ex.getMessage());
+        error.put("email", ex.getEmail());
+        error.put("path", request.getRequestURI());
+        error.put("timestamp", java.time.Instant.now().toString());
+        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex, HttpServletRequest request) {
         ErrorResponse error = new ErrorResponse(

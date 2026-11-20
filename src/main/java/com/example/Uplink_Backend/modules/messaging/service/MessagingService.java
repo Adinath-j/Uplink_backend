@@ -281,35 +281,21 @@ public class MessagingService {
     }
 
     public List<UserSearchResultDto> searchPeers(UUID currentUserId, String query) {
+        String cleanQuery = (query == null) ? "" : query.trim();
         List<User> users;
-        if (query == null || query.trim().isEmpty()) {
-            users = userRepository.findSuggestedUsers(currentUserId, PageRequest.of(0, 30));
+        if (cleanQuery.isEmpty()) {
+            users = userRepository.findAllActiveExcept(currentUserId, PageRequest.of(0, 100));
         } else {
-            String q = query.trim();
-            users = userRepository.searchUsers(q, currentUserId, PageRequest.of(0, 30));
-            // If no match found, try collapsed repeating characters (e.g. "abhii" -> "abhi")
-            if (users.isEmpty() && q.length() >= 3) {
-                String collapsed = q.replaceAll("(.)\\1+", "$1");
-                if (!collapsed.equalsIgnoreCase(q)) {
-                    users = userRepository.searchUsers(collapsed, currentUserId, PageRequest.of(0, 30));
-                }
-            }
-            // If still no match and query length >= 4, try prefix matching
-            if (users.isEmpty() && q.length() >= 4) {
-                String prefix = q.substring(0, 3);
-                users = userRepository.searchUsers(prefix, currentUserId, PageRequest.of(0, 30));
-            }
+            String collapsedQuery = cleanQuery.replaceAll("(.)\\1+", "$1");
+            users = userRepository.searchUsers(cleanQuery, collapsedQuery, currentUserId, PageRequest.of(0, 100));
         }
         return users.stream()
                 .map(u -> {
-                    String roleName = null;
+                    String role = "STUDENT";
                     if (u.getRoles() != null && !u.getRoles().isEmpty()) {
-                        roleName = u.getRoles().iterator().next().getName();
-                        if (roleName != null && roleName.startsWith("ROLE_")) {
-                            roleName = roleName.substring(5);
-                        }
+                        role = u.getRoles().iterator().next().getName();
                     }
-                    return new UserSearchResultDto(u.getId(), u.getFullName(), u.getEmail(), roleName);
+                    return new UserSearchResultDto(u.getId(), u.getFullName(), u.getEmail(), role, null, null);
                 })
                 .collect(Collectors.toList());
     }

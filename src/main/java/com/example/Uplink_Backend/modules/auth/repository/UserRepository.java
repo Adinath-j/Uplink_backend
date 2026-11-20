@@ -21,10 +21,15 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Page<User> findByIsDeletedFalse(Pageable pageable);
     long countByIsActiveTrue();
 
+    @Query("SELECT u FROM User u WHERE u.id <> :excludeUserId AND (u.isDeleted = false OR u.isDeleted IS NULL) AND (u.isActive = true OR u.isActive IS NULL) ORDER BY u.fullName ASC")
+    List<User> findAllActiveExcept(@Param("excludeUserId") UUID excludeUserId, Pageable pageable);
+
+    @Query("SELECT u FROM User u WHERE u.id <> :excludeUserId AND (u.isDeleted = false OR u.isDeleted IS NULL) AND (u.isActive = true OR u.isActive IS NULL) AND " +
+           "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :collapsedQuery, '%'))) ORDER BY u.fullName ASC")
+    List<User> searchUsers(@Param("query") String query, @Param("collapsedQuery") String collapsedQuery, @Param("excludeUserId") UUID excludeUserId, Pageable pageable);
+
     @Query("SELECT u FROM User u WHERE u.id <> :excludeUserId AND (u.isDeleted = false OR u.isDeleted IS NULL) AND (u.isActive = true OR u.isActive IS NULL) AND " +
            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')))")
     List<User> searchUsers(@Param("query") String query, @Param("excludeUserId") UUID excludeUserId, Pageable pageable);
-
-    @Query("SELECT u FROM User u WHERE u.id <> :excludeUserId AND (u.isDeleted = false OR u.isDeleted IS NULL) AND (u.isActive = true OR u.isActive IS NULL) ORDER BY u.fullName ASC")
-    List<User> findSuggestedUsers(@Param("excludeUserId") UUID excludeUserId, Pageable pageable);
 }
